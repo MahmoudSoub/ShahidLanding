@@ -5,6 +5,8 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
   Animated,
+  useWindowDimensions,
+  Text,
 } from 'react-native';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {getData} from '../util/api';
@@ -19,6 +21,24 @@ export interface Item {
 export default function HeroSwiper() {
   const [items, setItems] = useState<Item[]>([]);
   const [currentId, setCurrentId] = useState(0);
+  const flatlistRef = useRef<FlatList>(null);
+  const currentIdxRef = useRef(0);
+
+  const {width, height} = useWindowDimensions();
+  const isPortrait = height > width;
+
+  useEffect(() => {
+    if (items.length > 0) {
+      const timeout = setTimeout(() => {
+        flatlistRef.current?.scrollToIndex({
+          animated: true,
+          index: currentIdxRef.current,
+        });
+      }, 200);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [isPortrait]);
 
   useEffect(() => {
     const getItems = async () => {
@@ -27,26 +47,49 @@ export default function HeroSwiper() {
     };
     getItems();
   }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (items.length > 0) {
+        const nextIndex = currentIdxRef.current + 1;
+        flatlistRef.current?.scrollToIndex({
+          animated: true,
+          index: nextIndex,
+        });
+        currentIdxRef.current = nextIndex;
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [currentIdxRef, items]);
+
   const viewabilityConfig = {
     itemVisiblePercentThreshold: 50,
   };
+
   const onViewableItemsChanged = useCallback(
     ({viewableItems}: {viewableItems: any}) => {
       if (viewableItems.length > 0 && viewableItems[0].isViewable) {
+        currentIdxRef.current = viewableItems[0].index;
         setCurrentId(viewableItems[0].item.item.id);
       }
     },
     [],
   );
+
   const viewabilityConfigCallbackPairs = useRef([
     {viewabilityConfig, onViewableItemsChanged},
   ]);
+
   const scrollX = useRef(new Animated.Value(0)).current;
 
-  const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    Animated.event([{nativeEvent: {contentOffset: {x: scrollX}}}], {
-      useNativeDriver: false,
-    })(event);
+  const onScroll = Animated.event(
+    [{nativeEvent: {contentOffset: {x: scrollX}}}],
+    {useNativeDriver: true},
+  );
+
+  const handleRenderItem = ({item, index}: {item: Item; index: number}) => {
+    return <HeroComponent item={item} index={index} scrollX={scrollX} />;
   };
   const handleRenderItem = ({item}: {item: Item}) => {
     return <HeroComponent item={item} />;

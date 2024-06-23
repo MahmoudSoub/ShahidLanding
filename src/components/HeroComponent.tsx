@@ -3,8 +3,9 @@ import {
   StyleSheet,
   ImageBackground,
   useWindowDimensions,
+  Animated,
 } from 'react-native';
-import React from 'react';
+import React, {useState} from 'react';
 import {updateImageUri} from '../util/updateImageUri';
 import {dimensionsCalculation} from '../util/dimensionsCalculation';
 import TabletHeroInfo from './TabletHeroInfo';
@@ -16,9 +17,16 @@ import {Colors} from '../constants/Colors';
 
 interface HeroComponentProps {
   item: Item;
+  scrollX: Animated.Value;
+  index: number;
 }
 
-export default function HeroComponent({item}: HeroComponentProps) {
+export default function HeroComponent({
+  item,
+  scrollX,
+  index,
+}: HeroComponentProps) {
+  const [isMyListChecked, setIsMyListChecked] = useState(false);
   const isTablet = DeviceUtils.isTablet();
   const {width, height} = useWindowDimensions();
   const isPortrait = height > width;
@@ -45,9 +53,21 @@ export default function HeroComponent({item}: HeroComponentProps) {
           style={styles.topGradient}
         />
         {isTablet ? (
-          <TabletHeroInfo item={item} />
+          <TabletHeroInfo
+            item={item}
+            scrollX={scrollX}
+            index={index}
+            isMyListChecked={isMyListChecked}
+            setIsMyListChecked={setIsMyListChecked}
+          />
         ) : (
-          <MobileHeroInfo item={item} />
+          <MobileHeroInfo
+            item={item}
+            scrollX={scrollX}
+            index={index}
+            isMyListChecked={isMyListChecked}
+            setIsMyListChecked={setIsMyListChecked}
+          />
         )}
       </ImageBackground>
     </View>

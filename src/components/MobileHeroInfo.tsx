@@ -6,8 +6,9 @@ import {
   Pressable,
   ImageBackground,
   useWindowDimensions,
+  Animated,
 } from 'react-native';
-import React from 'react';
+import React, {Dispatch} from 'react';
 import {dimensionsCalculation} from '../util/dimensionsCalculation';
 import {updateImageUri} from '../util/updateImageUri';
 import DeviceUtils from '../util/DeviceUtils';
@@ -17,16 +18,28 @@ import LinearGradient from 'react-native-linear-gradient';
 import {Colors} from '../constants/Colors';
 
 interface MobileHeroInfoProps {
+  setIsMyListChecked: Dispatch<React.SetStateAction<boolean>>;
+  isMyListChecked: boolean;
   item: Item;
 }
 interface Genre {
   id: number;
   title: string;
 }
-export default function MobileHeroInfo({item}: MobileHeroInfoProps) {
+
+export default function MobileHeroInfo({
+  item,
+  scrollX,
+  index,
+  isMyListChecked,
+  setIsMyListChecked,
+}: MobileHeroInfoProps) {
   const isTablet = DeviceUtils.isTablet();
   const {width} = useWindowDimensions();
 
+  const handleMyListPress = () => {
+    setIsMyListChecked(!isMyListChecked);
+  };
   return (
     <View style={styles.heroInfo}>
       <LinearGradient
@@ -57,7 +70,7 @@ export default function MobileHeroInfo({item}: MobileHeroInfoProps) {
             <Text style={styles.seasonText}>
               {`${item.item.season?.numberOfAVODEpisodes} Free ${
                 item.item.season?.numberOfAVODEpisodes > 1
-                  ? 'Episods'
+                    ? 'Episodes'
                   : 'Episode'
               } `}
             </Text>
@@ -73,16 +86,22 @@ export default function MobileHeroInfo({item}: MobileHeroInfoProps) {
             <View style={styles.greenCircle} />
           </>
         )}
-        <View style={styles.genresContainer}>
-          {item.item.genres.map((genre: Genre, index: number) => (
+          {item.item.genres.map((genre: Genre, index: number) => {
+            const shouldRenderGreenCircle =
+              index === 0
+                ? !!item.item.season?.seasonNumber
+                : item.item.genres.length !== 1;
+
+            return (
             <View key={genre.id} style={styles.genreContainer}>
+                {shouldRenderGreenCircle && <View style={styles.greenCircle} />}
               <Text style={styles.genreText}>{` ${genre.title} `}</Text>
               {index !== item.item.genres.length - 1 && (
                 <View style={styles.greenCircle} />
               )}
             </View>
-          ))}
-        </View>
+            );
+          })}
       </View>
       <View style={styles.topAndRank}>
         <Image
@@ -90,23 +109,27 @@ export default function MobileHeroInfo({item}: MobileHeroInfoProps) {
           style={styles.top10Image}
         />
         {!!item.item.season?.tag && (
-          <>
+            <View style={styles.greenSeparatorAndtagText}>
             <View style={styles.greenSeparator} />
             <Text style={styles.tagText}>{item.item.season?.tag}</Text>
-          </>
+            </View>
         )}
       </View>
       <View style={styles.buttonsContainer}>
         <Pressable>
           <PlayButton />
         </Pressable>
-        <Pressable style={styles.plusAndMyList}>
+          <Pressable style={styles.plusAndMyList} onPress={handleMyListPress}>
           <ImageBackground
             style={styles.plusBorder}
             source={require('../assets/gradientBorderM.png')}>
             <Image
               style={styles.plusImage}
-              source={require('../assets/plus.png')}
+                source={
+                  isMyListChecked
+                    ? require('../assets/check.png')
+                    : require('../assets/plus.png')
+                }
               tintColor={Colors.white}
             />
             <Text style={styles.myListText}>My List</Text>
@@ -136,6 +159,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: dimensionsCalculation(0, 14),
   },
+  greenSeparatorAndtagText: {
+    left: dimensionsCalculation(4, 8),
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   rankText: {
     color: Colors.white,
     fontSize: dimensionsCalculation(14, 0),
@@ -151,7 +179,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexWrap: 'wrap',
-    width: '100%',
+    paddingHorizontal: dimensionsCalculation(0, 25),
     marginBottom: dimensionsCalculation(0, 10),
   },
   seasonText: {
@@ -160,7 +188,7 @@ const styles = StyleSheet.create({
     marginRight: dimensionsCalculation(6, 0),
   },
   genreText: {
-    color: Colors.whiteShade,
+    color: Colors.offWhite,
     fontSize: dimensionsCalculation(14, 0),
   },
   greenCircle: {
