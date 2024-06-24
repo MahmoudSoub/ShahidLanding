@@ -19,12 +19,20 @@ import {Colors} from '../constants/Colors';
 
 interface TabletHeroInfoProps {
   item: Item;
+  isMyListChecked: boolean;
+  setIsMyListChecked: Dispatch<React.SetStateAction<boolean>>;
 }
-export default function TabletHeroInfo({item}: TabletHeroInfoProps) {
+export default function TabletHeroInfo({
+  item,
+  scrollX,
+  index,
+  isMyListChecked,
+  setIsMyListChecked,
+}: TabletHeroInfoProps) {
   const {width, height} = useWindowDimensions();
   const isTablet = DeviceUtils.isTablet();
   return (
-    <View style={styles.heroInfo}>
+    <>
       <LinearGradient
         locations={[0, 0.5, 1]}
         colors={Colors.bottomGradientT}
@@ -67,6 +75,13 @@ export default function TabletHeroInfo({item}: TabletHeroInfoProps) {
         )}
         <Text style={styles.genreText}>{`${item.item.genres[0].title}`}</Text>
       </View>
+        {!isPortrait && (
+          <View style={styles.description}>
+            <Text style={styles.descriptionText}>
+              {item.item.description.trim()}
+            </Text>
+          </View>
+        )}
       <View style={styles.serparatorAndShowing}>
         <View style={styles.greenSeparator} />
         <Text style={styles.showingText}>Showing First on VIP</Text>
@@ -94,7 +109,11 @@ export default function TabletHeroInfo({item}: TabletHeroInfoProps) {
             source={require('../assets/gradientBorder.png')}>
             <Image
               style={styles.plusImage}
-              source={require('../assets/plus.png')}
+                source={
+                  isMyListChecked
+                    ? require('../assets/check.png')
+                    : require('../assets/plus.png')
+                }
               tintColor={Colors.white}
             />
           </ImageBackground>
@@ -230,5 +249,13 @@ const styles = StyleSheet.create({
     left: 0,
     height: dimensionsCalculation(576, 0),
     width: dimensionsCalculation(512, 0),
+  },
+  description: {
+    paddingBottom: dimensionsCalculation(8, 0),
+    width: dimensionsCalculation(336, 0),
+  },
+  descriptionText: {
+    color: Colors.white,
+    fontSize: dimensionsCalculation(14, 0),
   },
 });
