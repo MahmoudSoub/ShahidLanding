@@ -21,6 +21,8 @@ interface MobileHeroInfoProps {
   setIsMyListChecked: Dispatch<React.SetStateAction<boolean>>;
   isMyListChecked: boolean;
   item: Item;
+  scrollX: Animated.Value;
+  index: number;
 }
 interface Genre {
   id: number;
@@ -36,56 +38,60 @@ export default function MobileHeroInfo({
 }: MobileHeroInfoProps) {
   const isTablet = DeviceUtils.isTablet();
   const {width} = useWindowDimensions();
+  const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
+  const translateX = scrollX.interpolate({
+    inputRange,
+    outputRange: [width * 0.5, 0, -width * 0.5],
+  });
 
   const handleMyListPress = () => {
     setIsMyListChecked(!isMyListChecked);
   };
   return (
-    <View style={styles.heroInfo}>
+    <>
       <LinearGradient
         locations={[0.38, 0.89]}
         colors={Colors.bottomGradientM}
         style={[styles.bottomGradient, {width}]}
       />
-      <Image
-        source={{
-          uri: updateImageUri({
-            url: item.item.logoTitleImage,
-            height: '',
-            width: dimensionsCalculation(0, 246),
-            croppingPoint: 'mc',
-          }),
-        }}
-        resizeMode="contain"
-        style={styles.logoImage}
-      />
-      <View style={styles.freeSeasonGenresContainer}>
-        {!!item.item.season?.numberOfAVODEpisodes && (
-          <>
-            <Image
-              source={require('../assets/unlock.png')}
-              style={styles.unlockImage}
-            />
+      <Animated.View style={[styles.heroInfo, {transform: [{translateX}]}]}>
+        <Image
+          source={{
+            uri: updateImageUri({
+              url: item.item.logoTitleImage,
+              height: '',
+              width: dimensionsCalculation(0, 246),
+              croppingPoint: 'mc',
+            }),
+          }}
+          resizeMode="contain"
+          style={styles.logoImage}
+        />
+        <View style={styles.freeSeasonGenresContainer}>
+          {!!item.item.season?.numberOfAVODEpisodes && (
+            <>
+              <Image
+                source={require('../assets/unlock.png')}
+                style={styles.unlockImage}
+              />
 
-            <Text style={styles.seasonText}>
-              {`${item.item.season?.numberOfAVODEpisodes} Free ${
-                item.item.season?.numberOfAVODEpisodes > 1
+              <Text style={styles.seasonText}>
+                {`${item.item.season?.numberOfAVODEpisodes} Free ${
+                  item.item.season?.numberOfAVODEpisodes > 1
                     ? 'Episodes'
-                  : 'Episode'
-              } `}
-            </Text>
-
-            <View style={styles.greenCircle} />
-          </>
-        )}
-        {!!item.item.season?.seasonNumber && (
-          <>
-            <Text style={styles.seasonText}>
-              {` Season ${item.item.season?.seasonNumber} `}
-            </Text>
-            <View style={styles.greenCircle} />
-          </>
-        )}
+                    : 'Episode'
+                } `}
+              </Text>
+              <View style={styles.greenCircle} />
+            </>
+          )}
+          {!!item.item.season?.seasonNumber && (
+            <>
+              <Text style={styles.seasonText}>
+                {` Season ${item.item.season?.seasonNumber} `}
+              </Text>
+            </>
+          )}
           {item.item.genres.map((genre: Genre, index: number) => {
             const shouldRenderGreenCircle =
               index === 0
@@ -93,50 +99,48 @@ export default function MobileHeroInfo({
                 : item.item.genres.length !== 1;
 
             return (
-            <View key={genre.id} style={styles.genreContainer}>
+              <View key={genre.id} style={styles.genreContainer}>
                 {shouldRenderGreenCircle && <View style={styles.greenCircle} />}
-              <Text style={styles.genreText}>{` ${genre.title} `}</Text>
-              {index !== item.item.genres.length - 1 && (
-                <View style={styles.greenCircle} />
-              )}
-            </View>
+                <Text style={styles.genreText}>{` ${genre.title} `}</Text>
+              </View>
             );
           })}
-      </View>
-      <View style={styles.topAndRank}>
-        <Image
-          source={require('../assets/top10.png')}
-          style={styles.top10Image}
-        />
-        {!!item.item.season?.tag && (
+        </View>
+        <View style={styles.topAndRank}>
+          <Image
+            source={require('../assets/top10.png')}
+            style={styles.top10Image}
+          />
+          {!!item.item.season?.tag && (
             <View style={styles.greenSeparatorAndtagText}>
-            <View style={styles.greenSeparator} />
-            <Text style={styles.tagText}>{item.item.season?.tag}</Text>
+              <View style={styles.greenSeparator} />
+              <Text style={styles.tagText}>{item.item.season?.tag}</Text>
             </View>
-        )}
-      </View>
-      <View style={styles.buttonsContainer}>
-        <Pressable>
-          <PlayButton />
-        </Pressable>
+          )}
+        </View>
+        <View style={styles.buttonsContainer}>
+          <Pressable>
+            <PlayButton />
+          </Pressable>
           <Pressable style={styles.plusAndMyList} onPress={handleMyListPress}>
-          <ImageBackground
-            style={styles.plusBorder}
-            source={require('../assets/gradientBorderM.png')}>
-            <Image
-              style={styles.plusImage}
+            <ImageBackground
+              style={styles.plusBorder}
+              source={require('../assets/gradientBorderM.png')}>
+              <Image
+                style={styles.plusImage}
                 source={
                   isMyListChecked
                     ? require('../assets/check.png')
                     : require('../assets/plus.png')
                 }
-              tintColor={Colors.white}
-            />
-            <Text style={styles.myListText}>My List</Text>
-          </ImageBackground>
-        </Pressable>
-      </View>
-    </View>
+                tintColor={Colors.white}
+              />
+              <Text style={styles.myListText}>My List</Text>
+            </ImageBackground>
+          </Pressable>
+        </View>
+      </Animated.View>
+    </>
   );
 }
 
@@ -172,7 +176,6 @@ const styles = StyleSheet.create({
   top10Image: {
     height: dimensionsCalculation(32, 20),
     width: dimensionsCalculation(24, 16),
-    marginRight: dimensionsCalculation(4, 8),
   },
   freeSeasonGenresContainer: {
     flexDirection: 'row',

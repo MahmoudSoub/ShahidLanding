@@ -91,22 +91,78 @@ export default function HeroSwiper() {
   const handleRenderItem = ({item, index}: {item: Item; index: number}) => {
     return <HeroComponent item={item} index={index} scrollX={scrollX} />;
   };
-  const handleRenderItem = ({item}: {item: Item}) => {
-    return <HeroComponent item={item} />;
+
+  const getItemLayout = (_data: any, index: number) => ({
+    length: width,
+    offset: width * index,
+    index,
+  });
+
+  const onScrollToIndexFailed = (info: {
+    index: number;
+    highestMeasuredFrameIndex: number;
+    averageItemLength: number;
+  }) => {
+    flatlistRef.current?.scrollToOffset({
+      offset: info.averageItemLength * info.index,
+      animated: false,
+    });
+    setTimeout(() => {
+      if (flatlistRef.current) {
+        flatlistRef.current.scrollToIndex({index: info.index, animated: true});
+      }
+    }, 100);
+  };
+
+  const initialIndex = 1;
+
+  if (items.length === 0) {
+    return (
+      <View>
+        <Text>Loading</Text>
+      </View>
+    );
+  }
+  const duplicatedItems = [items[items.length - 1], ...items, items[0]];
+
+  const onMomentumScrollEnd = (
+    event: NativeSyntheticEvent<NativeScrollEvent>,
+  ) => {
+    const contentOffsetX = event.nativeEvent.contentOffset.x;
+    const itemWidth = event.nativeEvent.layoutMeasurement.width;
+    const currentIndex = Math.floor(contentOffsetX / itemWidth);
+
+    if (currentIndex === 0) {
+      flatlistRef.current?.scrollToIndex({
+        index: items.length,
+        animated: false,
+      });
+    } else if (currentIndex === items.length + 1) {
+      flatlistRef.current?.scrollToIndex({
+        index: 1,
+        animated: false,
+      });
+    }
   };
 
   return (
     <View>
-      <FlatList
+      <Animated.FlatList
+        initialScrollIndex={initialIndex}
+        ref={flatlistRef}
+        bounces={false}
         style={styles.flatlist}
-        data={items}
-        keyExtractor={item => item.item.id}
+        data={duplicatedItems}
+        keyExtractor={(item, index) => `${item.item.id}-${index}`}
         renderItem={handleRenderItem}
         horizontal
         showsHorizontalScrollIndicator={false}
         pagingEnabled
         onScroll={onScroll}
         viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs.current}
+        getItemLayout={getItemLayout}
+        onScrollToIndexFailed={onScrollToIndexFailed}
+        onMomentumScrollEnd={onMomentumScrollEnd}
       />
       <Pagination currentId={currentId} scrollX={scrollX} items={items} />
     </View>
