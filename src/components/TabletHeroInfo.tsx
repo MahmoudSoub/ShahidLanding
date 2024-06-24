@@ -6,8 +6,9 @@ import {
   Pressable,
   ImageBackground,
   useWindowDimensions,
+  Animated,
 } from 'react-native';
-import React from 'react';
+import React, {Dispatch} from 'react';
 import {dimensionsCalculation} from '../util/dimensionsCalculation';
 import {updateImageUri} from '../util/updateImageUri';
 import DeviceUtils from '../util/DeviceUtils';
@@ -18,6 +19,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import {Colors} from '../constants/Colors';
 
 interface TabletHeroInfoProps {
+  scrollX: Animated.Value;
+  index: number;
   item: Item;
   isMyListChecked: boolean;
   setIsMyListChecked: Dispatch<React.SetStateAction<boolean>>;
@@ -31,6 +34,20 @@ export default function TabletHeroInfo({
 }: TabletHeroInfoProps) {
   const {width, height} = useWindowDimensions();
   const isTablet = DeviceUtils.isTablet();
+  const isPortrait = height > width;
+  const inputRange = [
+    ((index - 1) * width) / 2,
+    index * width,
+    (index + 1) * width,
+  ];
+  const translateX = scrollX.interpolate({
+    inputRange,
+    outputRange: [width * 0.3, 0, -width * 0.3],
+  });
+
+  const handleMyListPress = () => {
+    setIsMyListChecked(!isMyListChecked);
+  };
   return (
     <>
       <LinearGradient
@@ -45,36 +62,37 @@ export default function TabletHeroInfo({
         colors={Colors.leftToRightGradientT}
         style={styles.leftToRightGradient}
       />
-      <Image
-        source={{
-          uri: updateImageUri({
-            url: item.item.logoTitleImage,
-            height: dimensionsCalculation(96, 88),
-            width: isTablet ? 'auto' : dimensionsCalculation(0, 88),
-            croppingPoint: 'mc',
-          }),
-        }}
-        resizeMode="contain"
-        style={styles.logoImage}
-      />
-      <View style={styles.topAndRank}>
+      <Animated.View style={[styles.heroInfo, {transform: [{translateX}]}]}>
         <Image
-          source={require('../assets/top10.png')}
-          style={styles.top10Image}
+          source={{
+            uri: updateImageUri({
+              url: item.item.logoTitleImage,
+              height: dimensionsCalculation(96, 88),
+              width: isTablet ? 'auto' : dimensionsCalculation(0, 88),
+              croppingPoint: 'mc',
+            }),
+          }}
+          resizeMode="contain"
+          style={styles.logoImage}
         />
-        <Text style={styles.rankText}>#8 in Jordan</Text>
-      </View>
-      <View style={styles.seasonAndGenre}>
-        {!!item.item.season?.seasonNumber && (
-          <>
-            <Text style={styles.seasonText}>
-              {`Season ${item.item.season?.seasonNumber}`}
-            </Text>
-            <View style={styles.greenCircle} />
-          </>
-        )}
-        <Text style={styles.genreText}>{`${item.item.genres[0].title}`}</Text>
-      </View>
+        <View style={styles.topAndRank}>
+          <Image
+            source={require('../assets/top10.png')}
+            style={styles.top10Image}
+          />
+          <Text style={styles.rankText}>#8 in Jordan</Text>
+        </View>
+        <View style={styles.seasonAndGenre}>
+          {!!item.item.season?.seasonNumber && (
+            <>
+              <Text style={styles.seasonText}>
+                {`Season ${item.item.season?.seasonNumber}`}
+              </Text>
+              <View style={styles.greenCircle} />
+            </>
+          )}
+          <Text style={styles.genreText}>{`${item.item.genres[0].title}`}</Text>
+        </View>
         {!isPortrait && (
           <View style={styles.description}>
             <Text style={styles.descriptionText}>
@@ -82,45 +100,46 @@ export default function TabletHeroInfo({
             </Text>
           </View>
         )}
-      <View style={styles.serparatorAndShowing}>
-        <View style={styles.greenSeparator} />
-        <Text style={styles.showingText}>Showing First on VIP</Text>
-      </View>
-      <BlurView
-        blurAmount={10}
-        blurType="chromeMaterialDark"
-        style={styles.playAndPlusContainer}>
-        <Pressable style={styles.playPressable}>
-          <PlayButton />
-          <View style={styles.watchAndSeason}>
-            <Text style={styles.watchNowText}>Watch Now</Text>
-            {!!item.item.season?.seasonNumber && (
-              <Text
-                style={
-                  styles.playSeasonText
-                }>{`Season ${item.item.season?.seasonNumber}, Episode 2`}</Text>
-            )}
-          </View>
-        </Pressable>
-        <View style={styles.graySeparator} />
-        <Pressable style={styles.plusAndMyList}>
-          <ImageBackground
-            style={styles.plusBorder}
-            source={require('../assets/gradientBorder.png')}>
-            <Image
-              style={styles.plusImage}
+        <View style={styles.serparatorAndShowing}>
+          <View style={styles.greenSeparator} />
+          <Text style={styles.showingText}>Showing First on VIP</Text>
+        </View>
+        <BlurView
+          blurAmount={10}
+          blurType="chromeMaterialDark"
+          style={styles.playAndPlusContainer}>
+          <Pressable style={styles.playPressable}>
+            <PlayButton />
+            <View style={styles.watchAndSeason}>
+              <Text style={styles.watchNowText}>Watch Now</Text>
+              {!!item.item.season?.seasonNumber && (
+                <Text
+                  style={
+                    styles.playSeasonText
+                  }>{`Season ${item.item.season?.seasonNumber}, Episode 2`}</Text>
+              )}
+            </View>
+          </Pressable>
+          <View style={styles.graySeparator} />
+          <Pressable style={styles.plusAndMyList} onPress={handleMyListPress}>
+            <ImageBackground
+              style={styles.plusBorder}
+              source={require('../assets/gradientBorder.png')}>
+              <Image
+                style={styles.plusImage}
                 source={
                   isMyListChecked
                     ? require('../assets/check.png')
                     : require('../assets/plus.png')
                 }
-              tintColor={Colors.white}
-            />
-          </ImageBackground>
-          <Text style={styles.myListText}>My List</Text>
-        </Pressable>
-      </BlurView>
-    </View>
+                tintColor={Colors.white}
+              />
+            </ImageBackground>
+            <Text style={styles.myListText}>My List</Text>
+          </Pressable>
+        </BlurView>
+      </Animated.View>
+    </>
   );
 }
 

@@ -1,30 +1,97 @@
-import {Animated, StyleSheet, View} from 'react-native';
+import {
+  Animated,
+  Dimensions,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import React from 'react';
 import {dimensionsCalculation} from '../util/dimensionsCalculation';
-import DeviceUtils from '../util/DeviceUtils';
 import {Colors} from '../constants/Colors';
-export interface Item {
-  [key: string]: any;
-}
+import {Item} from './HeroSwiper';
+import DeviceUtils from '../util/DeviceUtils';
+
 type PaginationProps = {
   currentId: number;
   scrollX: Animated.Value;
-  items: Item;
+  items: Item[];
 };
 
+const LINE_HEIGHT = dimensionsCalculation(2, 2);
+const LINE_WIDTH = dimensionsCalculation(8, 8);
+const LINE_SPACING = dimensionsCalculation(4, 4);
+const isTablet = DeviceUtils.isTablet();
+
 const Pagination = ({currentId, scrollX, items}: PaginationProps) => {
+  const {width} = useWindowDimensions();
+
   return (
     <View style={styles.container}>
-      {items.map((item: Item) => {
+      {items.map((item: Item, index: number) => {
         return (
           <Animated.View
             key={item.item.id}
-            style={
-              currentId === item.item.id ? styles.line : styles.lineOpacity
-            }
+            style={[
+              styles.inactiveLine,
+              {marginLeft: index === 0 ? 0 : LINE_SPACING},
+            ]}
           />
         );
       })}
+      <Animated.View
+        style={[
+          styles.activeLine,
+          {
+            left: null,
+            right: -(items.length * LINE_WIDTH),
+            transform: [
+              {
+                translateX: scrollX.interpolate({
+                  inputRange: [
+                    items.length * width,
+                    (items.length + 1) * width,
+                  ],
+                  outputRange: [0, LINE_WIDTH],
+                }),
+              },
+            ],
+          },
+        ]}
+      />
+      <Animated.View
+        style={[
+          styles.activeLine,
+          {
+            transform: [
+              {
+                translateX: Animated.divide(scrollX, width).interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, LINE_WIDTH + LINE_SPACING],
+                }),
+              },
+            ],
+          },
+        ]}
+      />
+      <Animated.View
+        style={[
+          styles.activeLine,
+          {
+            left: -LINE_WIDTH,
+            transform: [
+              {
+                translateX: scrollX.interpolate({
+                  inputRange: [
+                    items.length * width,
+                    (items.length + 1) * width,
+                  ],
+                  outputRange: [0, LINE_WIDTH],
+                }),
+              },
+            ],
+          },
+        ]}
+      />
     </View>
   );
 };
@@ -34,25 +101,25 @@ export default Pagination;
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    right: 0,
+    right: isTablet ? dimensionsCalculation(8, 0) : undefined,
     bottom: 0,
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    marginRight: dimensionsCalculation(8, 132),
-    paddingBottom: dimensionsCalculation(46, 9),
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: dimensionsCalculation(46, 8),
+    overflow: 'hidden',
   },
-  line: {
+  activeLine: {
+    position: 'absolute',
+    left: -(LINE_WIDTH + LINE_SPACING),
     backgroundColor: Colors.greenShade,
-    height: dimensionsCalculation(2, 2),
-    width: dimensionsCalculation(8, 8),
-    marginHorizontal: 2,
+    height: LINE_HEIGHT,
+    width: LINE_WIDTH,
   },
-  lineOpacity: {
+  inactiveLine: {
     backgroundColor: Colors.white,
-    height: dimensionsCalculation(2, 2),
-    width: dimensionsCalculation(8, 8),
-    marginHorizontal: 2,
-    opacity: 0.5,
+    height: LINE_HEIGHT,
+    width: LINE_WIDTH,
   },
 });
